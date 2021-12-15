@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="form-div">
+    <form class="face-recognation-form" enctype="multipart/form-data" method="POST" action="{% url 'core:FaceRegognation' %}">
+        {% csrf_token %}
+        <video id="video" width="320" height="240" autoplay hidden></video>
+        <canvas id="canvas" width="320" height="240" hidden name="image"></canvas>
+        <input type="text" id="canvasData" name="canvasData" hidden/>
+    </form>
+
+    <h1>Select The Authentication Type</h1>
+    {% if message %}
+    <div class="alert alert-warning">
+        {{message}}
+    </div>
+    {% endif %}
+    <div class="d-flex flex-wrap">
+        <button class="btn btn-light mt-3 p-2 w-100" id="face_authentication-btn">Face Authentication</button>
+        <button class="btn btn-light mt-3 p-2 w-100" id="finger_print-btn">Finger Print Authentication</button>
+        <a href="{% url 'core:phone_authentication'%}" class="w-100"><button class="btn btn-light mt-3 p-2 w-100">Phone Authentication</button></a>
+    </div>
+</div>
+{% if message == 'otp is send to the registered mobile number' %}
+    <div class="d-flex justify-content-center align-items-center container">
+        <form action="{% url 'core:submit_otp' %}" method="post">
+            {% csrf_token %}
+        <div class="card py-5 px-3">
+            <h5 class="m-0">Mobile phone verification</h5><span class="mobile-text">Enter the code we just send on your mobile phone <b class="text-danger">{{number}}</b></span>
+            <div class="d-flex flex-row mt-5"><input type="text" class="form-control" autofocus="" name="otp"></div>
+            <button class="btn btn-primary mt-3" type="submit">Submit</button>
+            <a href="{% url 'core:phone_authentication' %}" style="text-decoration: none;"><div class="text-center mt-5"><span class="d-block mobile-text">Don't receive the code?</span><span class="font-weight-bold text-danger cursor">Resend</span></div></a>
+        </div>
+    </form>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block script %}
+<script>
+    let camera_button = document.querySelector("#face_authentication-btn");
+    let video = document.querySelector("#video");
+    let canvas = document.querySelector("#canvas");
+
+    camera_button.addEventListener('click', async function () {
+        let stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+        });
+        video.srcObject = stream;
+
+
+        setTimeout(() => {
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            let image_data_url = canvas.toDataURL('image/jpeg', 1.0);
+
+            // data url of the image
+            // console.log(image_data_url);
+
+            stream.getTracks().forEach(function (track) {
+                track.stop();
+            });
+            $('#canvasData')[0].value = image_data_url;
+
+
+            var formdata = document.querySelector('.face-recognation-form').submit();
+        }, 3000);
+
+    });
+
+    function getCsrfToken(name) {
+    // Split cookie string and get all individual name=value pairs in an array
+    var cookieArr = document.cookie.split(";");
+
+    // Loop through the array elements
+    for (var i = 0; i < cookieArr.length; i++) {
+        var cookiePair = cookieArr[i].split("=");
+
+        /* Removing whitespace at the beginning of the cookie name
+        and compare it with the given string */
+        if (name == cookiePair[0].trim()) {
+            // Decode the cookie value and return
+            return decodeURIComponent(cookiePair[1]);
+        }
+    }
+
+    // Return null if not found
+    return null;
+}
+
+</script>
+{% endblock %}

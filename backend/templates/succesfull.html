@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+        <div class="card" style="width: 25%!important;">
+            <h1 class="mb-3">Payment Successfull</h1>
+            <div class="d-flex flew-row justify-content-between">
+                <p>Amount withdraw:</p>
+                <p>{{amount_requested}}</p>
+            </div>
+            <div class="d-flex flew-row justify-content-between">
+                <p>Remaining balance:</p>
+                <p>{{user.balance}}</p>
+            </div>
+        </div>
+</div>
+{% endblock %}
+
+
+{% block script %}
+<script>
+document.cookie = "account_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+</script>
+{% endblock %}

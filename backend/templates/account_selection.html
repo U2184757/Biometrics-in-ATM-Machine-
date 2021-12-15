@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="account_type">
+    <a href="{% url 'core:balance' %}"><button class="btn account_type_btn">Current</button></a>
+    <a href="{% url 'core:balance' %}"><button class="btn account_type_btn">Saving</button></a>
+    <a href="{% url 'core:balance' %}"><button class="btn account_type_btn">Default</button></a>
+    </div>
+</div>
+{% endblock %}

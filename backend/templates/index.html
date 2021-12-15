@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+   <div class="form-div">
+    <h1>ATM LOGIN</h1>
+    {% if message %}
+    {% if message == 'Payment Successfull!!' %}
+    <div class="alert alert-success">
+        {{message}}
+    </div>
+    {% else %}
+    <div class="alert alert-danger">
+        {{message}}
+    </div>
+    {% endif %}
+    {% endif %}
+    <form action="{% url 'core:login' %}" method="POST" class="d-flex flex-row flex-wrap justify-content-center mt-3">
+        {% csrf_token %}
+        <input type="text" class="form-control" placeholder="Enter your Account Number" name="account" required>
+        <Button class="btn btn-primary w-25 mt-4" type="submit">Login</Button>
+    </form>
+   </div>
+</div>
+{% endblock %}

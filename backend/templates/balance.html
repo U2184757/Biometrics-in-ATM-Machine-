@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="form-div">
+        {% if message %}
+        <div class="alert alert-danger">
+            {{message}}
+        </div>
+        {% endif %}
+        <form action="{% url 'core:balance' %}" method="POST"
+            class="d-flex flex-row flex-wrap justify-content-center mt-3 balance_form">
+            <div class="alert alert-danger w-100" style="display: none;">
+                Invalid Ammount
+            </div>
+            {% csrf_token %}
+            <input type="number" class="form-control amount_input" placeholder="Enter Ammount" name="ammount" value=""
+                required>
+            <Button class="btn btn-primary w-25 mt-4 balance_submit_btn" type="submit">Submit</Button>
+        </form>
+
+
+        <form class="face-recognation-submit" enctype="multipart/form-data" method="POST"
+            action="{% url 'core:balance' %}" hidden>
+            {% csrf_token %}
+            <video id="video" width="320" height="240" autoplay hidden></video>
+            <canvas id="canvas" width="320" height="240" hidden name="image"></canvas>
+            <input type="text" id="canvasData" name="canvasData" hidden />
+            <input type="text" value="{{last_verified}}" name="last_authentication" class="last_authentication_input"
+                hidden>
+            <input type="text" value="" name="amount" class="amount_input_submit" hidden value="0.00">
+        </form>
+
+
+        <form action="{% url 'core:submit_otp' %}" method="post" class="phone_submit" id="phone_submit" hidden>
+            {% csrf_token %}
+            <div class="card py-5 px-3">
+                <h5 class="m-0">Mobile phone verification</h5><span class="mobile-text">Enter the code we just send on
+                    your mobile phone <b class="text-danger">{{phone_num}}</b></span>
+                <div class="d-flex flex-row mt-5"><input type="text" class="form-control" autofocus="" name="otp"></div>
+                <input type="text" class="form-control" autofocus="" name="resubmit" value="true" hidden>
+                <input type="text" class="account_id" value="{{account_id}}" hidden>
+                <input type="text" name="amount" id="phone_amount" value="0.00" hidden>
+                <button class="btn btn-primary mt-3" type="submit">Submit</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    $(document).ready(function () {
+        $('.balance_form').submit(() => {
+            event.preventDefault();
+            var last_auth = document.querySelector('.last_authentication_input').value;
+            if (last_auth === '1') {
+                let camera_button = document.querySelector(".balance_submit_btn");
+                let video = document.querySelector("#video");
+                let canvas = document.querySelector("#canvas");
+
+                camera_button.addEventListener('click', async function () {
+                    let stream = await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: false
+                    });
+                    video.srcObject = stream;
+
+
+                    setTimeout(() => {
+                        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width,
+                            canvas
+                            .height);
+                        let image_data_url = canvas.toDataURL('image/jpeg', 1.0);
+
+
+                        stream.getTracks().forEach(function (track) {
+                            track.stop();
+                        });
+                        $('#canvasData')[0].value = image_data_url;
+                        $('.amount_input_submit').val($('.amount_input').val());
+
+                        var formdata = document.querySelector(
+                            '.face-recognation-submit').submit();
+                    }, 3000);
+
+                });
+            } else if (last_auth === '3') {
+                $('#phone_amount').val($('.amount_input').val());
+                fetch('/api_check_balance/', {
+                        method: "POST",
+                        headers: {
+                            'Content-Type': "Application/json",
+                            "X-CSRFToken": getCsrfToken("csrftoken")
+                        },
+                        body: JSON.stringify({
+                            "account_id": $('.account_id').val(),
+                            "amount": $('#phone_amount').val()
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.status === 'ok') {
+                            fetch('/api_send_otp/', {
+                                    method: "POST",
+                                    headers: {
+                                        'Content-Type': "Application/json",
+                                        "X-CSRFToken": getCsrfToken("csrftoken")
+                                    },
+                                    body: JSON.stringify({
+                                        "account_id": $('.account_id').val(),
+                                    })
+                                })
+                                .then(response => response.json())
+                                .then(result => {
+                                    if (result.status == 'ok') {
+                                        document.querySelector('.phone_submit').removeAttribute(
+                                            'hidden');
+                                    }
+                                })
+                        } else {
+                            document.querySelector('.alert-danger').innerText = result.message;
+                            document.querySelector('.alert-danger').style.display = 'block';
+                        }
+                    })
+            }
+        });
+    });
+
+    function getCsrfToken(name) {
+        // Split cookie string and get all individual name=value pairs in an array
+        var cookieArr = document.cookie.split(";");
+
+        // Loop through the array elements
+        for (var i = 0; i < cookieArr.length; i++) {
+            var cookiePair = cookieArr[i].split("=");
+
+            /* Removing whitespace at the beginning of the cookie name
+            and compare it with the given string */
+            if (name == cookiePair[0].trim()) {
+                // Decode the cookie value and return
+                return decodeURIComponent(cookiePair[1]);
+            }
+        }
+
+        // Return null if not found
+        return null;
+    }
+
+</script>
+{% endblock %}
